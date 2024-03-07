@@ -45,7 +45,7 @@ jobs:
                 if (changedFiles.some(changedFile => changedFile === file.path)) {
                   // Construct the mention message
                   const usersToMention = file.users.join(' ');
-                  message += `\n- '${file.path}'. Pinging ${usersToMention} for review.`;
+                  message += `\n- \``${file.path}\``. Pinging ${usersToMention} for review.`;
                   hasMentionedFiles = true;
                 }
               }
