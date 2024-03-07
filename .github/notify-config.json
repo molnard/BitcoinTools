@@ -7,6 +7,10 @@
     {
       "path": ".github/workflows/mention_users_on_filechange.yml",
       "users": ["@user3", "@user4"]
+    },
+    {
+      "path": ".github/workflows/",
+      "users": ["@user5", "@user6"]
     }
   ]
 }
