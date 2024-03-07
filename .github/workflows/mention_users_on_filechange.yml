@@ -35,7 +35,7 @@ jobs:
               });
               const changedFiles = listFilesResponse.data.map(file => file.filename);
 
-              const message = `Changes have been detected in:"
+              let message = `Changes have been detected in:"
               
               // Check if the PR contains changes to the files specified in the configuration
               for (const file of config.files_to_watch) {
