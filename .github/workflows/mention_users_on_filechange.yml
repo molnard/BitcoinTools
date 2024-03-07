@@ -1,0 +1,46 @@
+name: Mention Users on Specific File Change in PR
+
+on:
+  pull_request:
+
+jobs:
+  mention-users:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      
+      - name: Read configuration and mention users
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const yaml = require('js-yaml');
+            
+            // Read the configuration file
+            const configPath = '.github/notify-config.yml';
+            const configFile = fs.readFileSync(configPath, 'utf8');
+            const config = yaml.load(configFile);
+            
+            // Extract PR number
+            const prNumber = context.payload.pull_request.number;
+            
+            // Check if the PR contains changes to the files specified in the configuration
+            for (const file of config.files_to_watch) {
+              const changes = context.payload.pull_request.changed_files.find(changedFile => changedFile.filename === file.path);
+              if (changes) {
+                // Construct the mention message
+                const usersToMention = file.users.join(' ');
+                const message = `Changes have been detected in ${file.path}. Paging ${usersToMention} for review.`;
+                
+                // Post the comment on the PR
+                github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: message
+                });
+                break; // Optional: Remove this if you want to check all files and not just the first match
+              }
+            }
