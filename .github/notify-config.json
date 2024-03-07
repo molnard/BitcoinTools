@@ -1,0 +1,8 @@
+{
+  "files_to_watch": [
+    {
+      "path": ".github/notify-config.json",
+      "users": ["@user1", "@user2"]
+    }
+  ]
+}
