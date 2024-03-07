@@ -5,7 +5,7 @@
       "users": ["@user1", "@user2"]
     },
     {
-      "path": ".github/mention_users_on_filechange.yml",
+      "path": ".github/workflows/mention_users_on_filechange.yml",
       "users": ["@user3", "@user4"]
     }
   ]
