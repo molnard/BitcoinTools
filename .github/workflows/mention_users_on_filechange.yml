@@ -23,7 +23,7 @@ jobs:
             const config = JSON.parse(configFile);
             
             // Extract PR number
-            const prNumber = context.issue.number; // Correct way to get PR number
+            const prNumber = context.issue.number;
             
             // Async function to handle API calls and logic
             async function run() {
@@ -36,21 +36,25 @@ jobs:
               const changedFiles = listFilesResponse.data.map(file => file.filename);
               
               let message = "Changes have been detected in:";
-              
-              // Initialize a flag to check if any file was mentioned
               let hasMentionedFiles = false;
               
-              // Check if the PR contains changes to the files specified in the configuration
-              for (const file of config.files_to_watch) {
-                if (changedFiles.some(changedFile => changedFile === file.path)) {
-                  // Construct the mention message
-                  const usersToMention = file.users.join(' ');
-                  message += `\n- \`${file.path}\`. Pinging ${usersToMention} for review.`;
-                  hasMentionedFiles = true;
-                }
-              }
+              // Check if the PR contains changes to the files or folders specified in the configuration
+              config.files_to_watch.forEach(item => {
+                const isFolder = item.path.endsWith('/');
+                changedFiles.forEach(changedFile => {
+                  if (isFolder ? changedFile.startsWith(item.path) : changedFile === item.path) {
+                    // This means a file in the folder has changed or the specific file has changed
+                    if (!hasMentionedFiles) {
+                      // First time adding to the message, change the flag
+                      hasMentionedFiles = true;
+                    }
+                    const usersToMention = item.users.join(' ');
+                    message += `\n- \`${item.path}\` (Pinging ${usersToMention} for review).`;
+                  }
+                });
+              });
               
-              // Post the comment on the PR if there are any files to mention
+              // Post the comment on the PR if there are any files or folders to mention
               if (hasMentionedFiles) {
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
@@ -59,11 +63,10 @@ jobs:
                   body: message
                 });
               } else {
-                console.log("No configured files were changed in this PR.");
+                console.log("No configured files or folders were changed in this PR.");
               }
             }
             
             // Execute the async function
             run().catch(err => core.setFailed(`Unhandled error: ${err}`));
-
 
