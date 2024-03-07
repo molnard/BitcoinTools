@@ -34,8 +34,11 @@ jobs:
                 pull_number: prNumber,
               });
               const changedFiles = listFilesResponse.data.map(file => file.filename);
-
-              let message = `Changes have been detected in:"
+              
+              let message = "Changes have been detected in:";
+              
+              // Initialize a flag to check if any file was mentioned
+              let hasMentionedFiles = false;
               
               // Check if the PR contains changes to the files specified in the configuration
               for (const file of config.files_to_watch) {
@@ -43,19 +46,24 @@ jobs:
                   // Construct the mention message
                   const usersToMention = file.users.join(' ');
                   message += `\n- '${file.path}'. Pinging ${usersToMention} for review.`;
+                  hasMentionedFiles = true;
                 }
               }
-
-              // Post the comment on the PR
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: prNumber,
-                body: message
-              });
               
+              // Post the comment on the PR if there are any files to mention
+              if (hasMentionedFiles) {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: prNumber,
+                  body: message
+                });
+              } else {
+                console.log("No configured files were changed in this PR.");
+              }
             }
             
             // Execute the async function
             run().catch(err => core.setFailed(`Unhandled error: ${err}`));
+
 
