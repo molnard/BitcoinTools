@@ -34,24 +34,26 @@ jobs:
                 pull_number: prNumber,
               });
               const changedFiles = listFilesResponse.data.map(file => file.filename);
+
+              const message = `Changes have been detected in:"
               
               // Check if the PR contains changes to the files specified in the configuration
               for (const file of config.files_to_watch) {
                 if (changedFiles.some(changedFile => changedFile === file.path)) {
                   // Construct the mention message
                   const usersToMention = file.users.join(' ');
-                  const message = `Changes have been detected in ${file.path}. Paging ${usersToMention} for review.`;
-                  
-                  // Post the comment on the PR
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: prNumber,
-                    body: message
-                  });
-                  break; // Stop after first match, remove if you want to check all files
+                  message += `\n- '${file.path}'. Pinging ${usersToMention} for review.`;
                 }
               }
+
+              // Post the comment on the PR
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: message
+              });
+              
             }
             
             // Execute the async function
