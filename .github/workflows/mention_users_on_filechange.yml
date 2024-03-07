@@ -23,29 +23,37 @@ jobs:
             const config = JSON.parse(configFile);
             
             // Extract PR number
-            const prNumber = context.payload.pull_request.number;
+            const prNumber = context.issue.number; // Correct way to get PR number
             
-            // Check if the PR contains changes to the files specified in the configuration
-            let mentioned = false; // Flag to track if users have been mentioned
-            for (const file of config.files_to_watch) {
-              const hasFileChanged = context.payload.pull_request.changed_files.some(changedFile => changedFile.filename === file.path);
-              if (hasFileChanged) {
-                // Construct the mention message
-                const usersToMention = file.users.join(' ');
-                const message = `Changes have been detected in ${file.path}. Paging ${usersToMention} for review.`;
-                
-                // Post the comment on the PR
-                await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: message
-                });
-                mentioned = true;
-                break; // Optional: Remove this if you want to check all files and not just the first match
+            // Async function to handle API calls and logic
+            async function run() {
+              // Fetch list of files changed in the PR
+              const listFilesResponse = await github.rest.pulls.listFiles({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: prNumber,
+              });
+              const changedFiles = listFilesResponse.data.map(file => file.filename);
+              
+              // Check if the PR contains changes to the files specified in the configuration
+              for (const file of config.files_to_watch) {
+                if (changedFiles.some(changedFile => changedFile === file.path)) {
+                  // Construct the mention message
+                  const usersToMention = file.users.join(' ');
+                  const message = `Changes have been detected in ${file.path}. Paging ${usersToMention} for review.`;
+                  
+                  // Post the comment on the PR
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: prNumber,
+                    body: message
+                  });
+                  break; // Stop after first match, remove if you want to check all files
+                }
               }
             }
             
-            if (!mentioned) {
-              console.log("No specified files were changed in this PR.");
-            }
+            // Execute the async function
+            run().catch(err => core.setFailed(`Unhandled error: ${err}`));
+
